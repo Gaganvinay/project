@@ -1,0 +1,56 @@
+const express = require('express');
+const axios = require('axios');
+const Event = require('../models/Event');
+const router = express.Router();
+
+const ML_URL = process.env.ML_URL || 'http://ml-service:8001';
+
+// Get vendor graph (proxy to ML)
+router.get('/graph/:vendorId', async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const mlRes = await axios.get(`${ML_URL}/vendor_graph/${vendorId}`);
+    return res.json(mlRes.data);
+  } catch (err) {
+    console.error('Error fetching graph from ML service:', err.message);
+    return res.status(500).json({ error: 'Failed to fetch graph from ML service' });
+  }
+});
+
+// Log a vendor event and forward it to ML
+router.post('/', async (req, res) => {
+  try {
+    const { vendorId, eventType, metadata } = req.body;
+    if (!vendorId || !eventType) return res.status(400).json({ error: 'vendorId and eventType required' });
+
+    const event = new Event({ vendorId, eventType, metadata });
+    await event.save();
+
+    let prediction = null;
+    try {
+      const mlResp = await axios.post(`${ML_URL}/add_event`, { vendorId, eventType, metadata });
+      prediction = mlResp.data.prediction ?? mlResp.data;
+    } catch (mlErr) {
+      console.warn('Warning: ML service call failed:', mlErr.message);
+    }
+
+    return res.json({ saved: true, event, prediction });
+  } catch (err) {
+    console.error('Error saving event:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Fetch raw events for a vendor
+router.get('/:vendorId', async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const events = await Event.find({ vendorId }).sort({ timestamp: -1 }).lean();
+    return res.json({ vendorId, events });
+  } catch (err) {
+    console.error('Error fetching events:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

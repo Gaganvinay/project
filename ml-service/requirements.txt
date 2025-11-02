@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+pymongo
+torch
+torch-geometric
+networkx
+scikit-learn
+numpy
+rapidfuzz

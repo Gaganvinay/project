@@ -6,6 +6,7 @@ export default function Navbar() {
       <h1>Vendor BGAC Dashboard</h1>
       <div>
         <Link to="/">Dashboard</Link>
+        <Link to="/analytics">Analytics</Link>
       </div>
     </nav>
   );

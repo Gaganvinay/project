@@ -9,12 +9,15 @@ const morgan = require('morgan');
 const uploadRouter = require('./routes/upload');
 const eventsRouter = require('./routes/events');
 const mlRouter = require('./routes/ml');
+const analyticsRouter = require("./routes/analytics");
+const vendorRoutes=require("./routes/vendorRoutes");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(morgan('dev'));
-
+app.use("/api/analytics", analyticsRouter);
+app.use("/api/vendors",vendorRoutes);
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/vendorbgac';
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(()=> console.log('Mongo connected'))
